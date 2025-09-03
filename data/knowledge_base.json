@@ -1,0 +1,19 @@
+{
+    "records": [
+        {
+            "id": 1,
+            "question": "What are the different Mortgage Types that FannieMae will buy?",
+            "answer": "Fannie Mae purchases a variety of mortgage types including fixed-rate mortgages, adjustable-rate mortgages (ARMs), interest-only mortgages, and balloon mortgages. They also buy government-backed loans such as FHA, VA, and USDA loans, as well as conventional loans that meet their underwriting guidelines."
+        },
+        {
+            "id": 2,
+            "question": "Where can I find the seller's guide for FannieMae?",
+            "answer": "You can find the Fannie Mae Seller's Guide on their official website. The guide provides comprehensive information on selling loans to Fannie Mae, including eligibility requirements, underwriting standards, and delivery procedures. You can access it directly at: https://www.fanniemae.com/content/guide/sellers-guide"
+        },
+        {
+            "id": 3,
+            "question": "What happens when a loan goes delinquent?",
+            "answer": "When a loan goes delinquent, it means that the borrower has missed one or more scheduled payments. The lender typically contacts the borrower to discuss the missed payments and may offer options such as a repayment plan or loan modification. If the delinquency continues, the lender may initiate foreclosure proceedings to recover the outstanding debt by selling the property used as collateral for the loan."
+        }
+    ]
+}
