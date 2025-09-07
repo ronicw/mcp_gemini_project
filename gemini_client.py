@@ -75,7 +75,7 @@ class MCPGeminiClient:
 
         part = response.candidates[0].content.parts[0]
 
-        messages = [query]
+        messages = [{"role": "user", "parts": [{"text": query}]}]
 
         if hasattr(part, "function_call"):
             function_call = part.function_call
@@ -89,8 +89,11 @@ class MCPGeminiClient:
 
             # Call the tool with the parsed arguments
             result = await self.session.call_tool(function_call.name, arguments=args_dict)
-            print(f"\nTool result raw content: {result.content}")
-            messages.append(result.content[0].text)
+            # print(f"\nTool result raw content: {result.content}")
+            messages.append({
+                "role": "user",
+                "parts": [{"text": f"Function {function_call.name} returned: {result.content[0].text}"}]
+            })
 
             final_response = self.model.generate_content(
                 messages,
