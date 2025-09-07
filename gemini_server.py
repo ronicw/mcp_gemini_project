@@ -5,6 +5,7 @@ from google import genai
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
+
 # Create an MCP server
 mcp = FastMCP(
     name="Knowledge Base",
@@ -80,13 +81,21 @@ def process_weather_query(city):
     if error:
         return f"Error: {error}"
     
-    print(f"\nUsing location: {location['display_name']}")
+    display_name = location['display_name']
+    print(f"\nUsing location: {display_name}")
     latitude = location['latitude']
     longitude = location['longitude']
 
     """Invoke the publicly available API to return the weather for a given location."""
     url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
     response = requests.get(url)
+    # current = response.json().get("current", {})
+
+    # return ToolResponse(content=[Text(
+    #     f"Weather in {display_name}:\n"
+    #     f"Temperature: {current.get('temperature_2m', 'N/A')}°C\n"
+    #     f"Wind Speed: {current.get('wind_speed_10m', 'N/A')} km/h"
+    # )])
     return response.json()["current"]
 
 @mcp.tool()
@@ -94,6 +103,13 @@ def get_weather(latitude, longitude):
     """Invoke the publicly available API to return the weather for a given location."""
     url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
     response = requests.get(url)
+    # current = response.json().get("current", {})
+
+    # return ToolResponse(content=[Text(
+    #     f"Weather at ({latitude}, {longitude}):\n"
+    #     f"Temperature: {current.get('temperature_2m', 'N/A')}°C\n"
+    #     f"Wind Speed: {current.get('wind_speed_10m', 'N/A')} km/h"
+    # )])
     return response.json()["current"]
 
 @mcp.tool()
@@ -136,4 +152,7 @@ def get_knowledge_base() -> str:
 
 
 if __name__ == "__main__":
+    # print(get_weather("17.385", "78.4867"))
+    # print(process_weather_query("Osage,Iowa"))
+
     mcp.run(transport="stdio")

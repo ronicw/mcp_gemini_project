@@ -25,6 +25,14 @@ class MCPGeminiClient:
         self.stdio: Optional[Any] = None
         self.write: Optional[Any] = None
 
+    def strip_title(self, schema):
+            if isinstance(schema, dict):
+                return {k: self.strip_title(v) for k, v in schema.items() if k != "title"}
+            elif isinstance(schema, list):
+                return [self.strip_title(item) for item in schema]
+            else:
+                return schema
+
     async def connect_to_server(self, server_script_path: str = "gemini_server.py"):
         server_params = StdioServerParameters(
             command="python",
@@ -36,26 +44,12 @@ class MCPGeminiClient:
         await self.session.initialize()
 
         tools_result = await self.session.list_tools()
-        def strip_title(schema):
-            if isinstance(schema, dict):
-                return {k: strip_title(v) for k, v in schema.items() if k != "title"}
-            elif isinstance(schema, list):
-                return [strip_title(item) for item in schema]
-            else:
-                return schema
         print("\nConnected to server with tools:")
         for tool in tools_result.tools:
-            print(f"  - {tool.name}: {tool.description}  Parameters: {json.dumps(strip_title(tool.inputSchema), indent=4)}")
+            print(f"  - {tool.name}: {tool.description}  Parameters: {json.dumps(self.strip_title(tool.inputSchema), indent=4)}")
 
     async def get_mcp_tools(self) -> List[types.Tool]:
         tools_result = await self.session.list_tools()
-        def strip_title(schema):
-            if isinstance(schema, dict):
-                return {k: strip_title(v) for k, v in schema.items() if k != "title"}
-            elif isinstance(schema, list):
-                return [strip_title(item) for item in schema]
-            else:
-                return schema
             
         return [
             types.Tool(
@@ -63,7 +57,7 @@ class MCPGeminiClient:
                     {
                         "name": tool.name,
                         "description": tool.description,
-                        "parameters": strip_title(tool.inputSchema),
+                        "parameters": self.strip_title(tool.inputSchema),
                     }
                 ]
             )
@@ -85,8 +79,17 @@ class MCPGeminiClient:
 
         if hasattr(part, "function_call"):
             function_call = part.function_call
-            result = await self.session.call_tool(function_call.name, arguments=function_call.args)
 
+            # Convert Gemini's MapComposite to a regular dict
+            args_dict = dict(function_call.args)
+
+            # print(f"\nInvoking tool: {function_call.name}")
+            # print("Arguments passed to tool:")
+            # print(json.dumps(args_dict, indent=4)) 
+
+            # Call the tool with the parsed arguments
+            result = await self.session.call_tool(function_call.name, arguments=args_dict)
+            print(f"\nTool result raw content: {result.content}")
             messages.append(result.content[0].text)
 
             final_response = self.model.generate_content(
@@ -95,18 +98,18 @@ class MCPGeminiClient:
                 tools=tools,
             )
             return final_response.candidates[0].content.parts[0].text
-
         return part.text
 
     async def cleanup(self):
         await self.exit_stack.aclose()
 
 async def main():
-    client = MCPGeminiClient(model="gemini-2.5-flash")  # or "gemini-4o" if supported
+    client = MCPGeminiClient(model="gemini-2.5-flash")  
     # client = MCPGeminiClient(model="gemini-2.5-pro")
     await client.connect_to_server("gemini_server.py")
 
-    query = "What are the different Mortgage Types that Fannie Mae will buy?"
+    # Test knowledge base query
+    query = "Where can I find comprehensive information on selling loans to Fannie Mae?"
     response = await client.process_query(query)
     print(f"\n{query}\nResponse: {response}")
 
@@ -118,6 +121,7 @@ async def main():
     response = await client.process_query(weather_prompt)
     print(f"\n{weather_prompt}\nResponse: {response}")
 
+    # Test weather query with a specific city name
     city = "Osage,Iowa"
     weather_prompt = f"What is the weather like in {city}?"
     response = await client.process_query(weather_prompt)
