@@ -36,9 +36,16 @@ class MCPGeminiClient:
         await self.session.initialize()
 
         tools_result = await self.session.list_tools()
+        def strip_title(schema):
+            if isinstance(schema, dict):
+                return {k: strip_title(v) for k, v in schema.items() if k != "title"}
+            elif isinstance(schema, list):
+                return [strip_title(item) for item in schema]
+            else:
+                return schema
         print("\nConnected to server with tools:")
         for tool in tools_result.tools:
-            print(f"  - {tool.name}: {tool.description}")
+            print(f"  - {tool.name}: {tool.description}  Parameters: {json.dumps(strip_title(tool.inputSchema), indent=4)}")
 
     async def get_mcp_tools(self) -> List[types.Tool]:
         tools_result = await self.session.list_tools()
@@ -49,7 +56,7 @@ class MCPGeminiClient:
                 return [strip_title(item) for item in schema]
             else:
                 return schema
-
+            
         return [
             types.Tool(
                 function_declarations=[
@@ -95,14 +102,26 @@ class MCPGeminiClient:
         await self.exit_stack.aclose()
 
 async def main():
-    client = MCPGeminiClient(model="gemini-2.5-pro")  # or "gemini-4o" if supported
+    client = MCPGeminiClient(model="gemini-2.5-flash")  # or "gemini-4o" if supported
+    # client = MCPGeminiClient(model="gemini-2.5-pro")
     await client.connect_to_server("gemini_server.py")
 
-    query = "What are the different Mortgage Types that FannieMae will buy?"
-    print(f"\nQuery: {query}")
-
+    query = "What are the different Mortgage Types that Fannie Mae will buy?"
     response = await client.process_query(query)
-    print(f"\nResponse: {response}")
+    print(f"\n{query}\nResponse: {response}")
+
+    # Test weather query with specific coordinates
+    city = "Hyderabad"
+    latitude = 17.3850
+    longitude = 78.4867
+    weather_prompt = f"What is the weather like in {city} whose latitude is {latitude} and longitude is {longitude}?"
+    response = await client.process_query(weather_prompt)
+    print(f"\n{weather_prompt}\nResponse: {response}")
+
+    city = "Osage,Iowa"
+    weather_prompt = f"What is the weather like in {city}?"
+    response = await client.process_query(weather_prompt)
+    print(f"\n{weather_prompt}\nResponse: {response}") 
 
     await client.cleanup()
 
